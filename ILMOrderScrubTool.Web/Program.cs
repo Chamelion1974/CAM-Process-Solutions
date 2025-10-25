@@ -107,7 +107,38 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+// Add CORS for React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Add health checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>();
+
 var app = builder.Build();
+
+// Global exception handler
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        if (error != null)
+        {
+            await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred" });
+        }
+    });
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -119,77 +150,23 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseCors("AllowReactApp");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<ProgressHub>("/progressHub");
+app.MapHealthChecks("/health");
 
 app.Run();
 
+// Build the project
+dotnet build
 
+// Run migrations (if not done)
+dotnet ef migrations add InitialCreate -o Shared/Database/Migrations
+dotnet ef database update
 
-# Navigate to repository root (if not already there)
-cd C:\Users\adamg\source\repos\Chamelion1974\ILM-Operations-Platform
-
-# Create and switch to feature branch
-git checkout -b feature/phase2-order-scrub-module
-
-# Stage all changes
-git add .
-
-# Commit with comprehensive message
-git commit -m "Phase 2: Order Scrub Module implementation complete
-
-Features implemented:
-- Database infrastructure with EF Core
-  * User model with role-based access (Admin, Programmer, Operations, Viewer)
-  * AuditLog for compliance and activity tracking
-  * ScrubReportEntity and DiscrepancyEntity models
-  * ApplicationDbContext with indexes and relationships
-
-- Order reconciliation engine
-  * ReconciliationService with intelligent CustomerPO + PartNumber matching
-  * Severity-based discrepancy detection (Critical, High, Medium, Low)
-  * Support for missing orders from either system
-  * Real-time processing metrics and statistics
-
-- Excel file processing
-  * ExcelParserService for JobBoss and Customer file parsing
-  * ExportService with multi-sheet Excel reports
-  * Color-coded severity indicators in exports
-  * Support for .xlsx and .xls formats
-
-- REST API endpoints
-  * POST /api/orderscrub/upload - File upload and processing
-  * GET /api/orderscrub/report/{id} - Retrieve full reports
-  * GET /api/orderscrub/reports - Paginated list with filtering
-  * GET /api/orderscrub/export/{id} - Excel export
-  * DELETE /api/orderscrub/report/{id} - Admin-only deletion
-
-- Security and authentication
-  * JWT Bearer token authentication
-  * Role-based authorization
-  * Comprehensive audit logging with IP tracking
-  * Secure password hashing support
-
-- Progress tracking dashboard
-  * Real-time metrics via SignalR ProgressHub
-  * Module progress indicators
-  * Development status dashboard (dashboard.html)
-  * Platform health monitoring endpoints
-
-- Developer experience
-  * Swagger UI with JWT authentication support
-  * XML documentation for all API endpoints
-  * Comprehensive error handling and validation
-  * Structured logging throughout
-
-Technical stack: .NET 8, EF Core 8, SQL Server LocalDB, EPPlus 7.0, SignalR, JWT Bearer"
-
-# Push to remote repository (creates the branch on GitHub)
-git push -u origin feature/phase2-order-scrub-module
-
-git checkout main
-git merge feature/phase2-order-scrub-module
-git push origin main
+// Run the application
+dotnet run
