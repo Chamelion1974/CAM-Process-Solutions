@@ -1,6 +1,6 @@
-# ILM Order Scrub Tool
+# CAM Process Solutions
 
-A complete web application to process purchase orders for errors.
+
 
 ## Architecture
 
@@ -10,7 +10,7 @@ A complete web application to process purchase orders for errors.
 
 ## Project Structure
 
-### ILMOrderScrubTool.Web
+### CAMProcessSolutions.Web
 ASP.NET Core Web API project with the following features:
 - **Framework**: .NET 8.0
 - **HTTPS**: Configured for secure communication
@@ -27,7 +27,7 @@ ASP.NET Core Web API project with the following features:
 
 1. Navigate to the project directory:
    ```bash
-   cd ILMOrderScrubTool.Web
+   cd CAMProcessSolutions.Web
    ```
 
 2. Restore dependencies:
